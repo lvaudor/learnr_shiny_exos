@@ -1,0 +1,1474 @@
+---
+title: "Exos shiny"
+output:
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+runtime: shiny_prerendered
+css: "www/style_tuto_learnr.css"
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+library(gradethis)
+
+Sys.setlocale("LC_ALL", "fr_FR.UTF-8")
+gradethis_setup()
+ 
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+
+## Partie 1: Introduction
+
+### 1.1 Noms réservés
+
+```{r noms_reserves}
+question("Quels noms de fichiers sont réservés aux applis Shiny (plusieurs réponses possibles)?",
+         answer("ui.R", correct=TRUE),
+         answer("shiny.R"),
+         answer("UI.R"),
+         answer("Server.R"),
+         answer("app.R", correct = TRUE),
+         answer("server.R", correct=TRUE),
+         answer("global.R", correct=TRUE),
+         incorrect="Quatre de ces propositions sont correctes.",
+         correct="Oui! Votre appli shiny peut consister en un fichier principal (app.R) ou deux ou trois fichiers principaux (ui.R + server.R + éventuellement global.R)",
+         allow_retry=TRUE
+)
+
+```
+
+
+### 1.2 Inputs
+
+```{r user_input_in_what}
+question("Le code pour demander à l'utilisateur de rentrer un choix va dans",
+         answer("ui", correct=TRUE),
+         answer("server"),
+         answer("global"),
+         incorrect="Il s'agit d'un input de l'utilisateur.",
+         correct="Oui! Tout ce qui permet de définir un input utilisateur va (a priori) dans ui",
+         allow_retry=TRUE
+)
+```
+
+### 1.3 Réactions
+
+```{r code_in_what}
+question("Le code R qui permet de programmer un message automatique en fonction d'un input de l'utilisateur (par exemple en utilisant la fonction paste()) va dans",
+         answer("ui"),
+         answer("server", correct=TRUE),
+         answer("global"),
+         incorrect="Il s'agit d'un code qui effectue des opérations en prenant en compte un input de l'utilisateur.",
+         correct="Oui! Les calculs/commandes/opérations vont de manière général dans server",
+         allow_retry=TRUE
+)
+```
+
+### 1.4 Les bouts de codes correspondant aux prérequis vont où?
+
+```{r general_in_what}
+question("Le chargement d'un package ou la lecture de données qui serviront pour l'ensemble de l'appli vont dans",
+         answer("ui"),
+         answer("server"),
+         answer("global", correct=TRUE),
+         incorrect="Il ne s'agit pas de choses qui doivent s'exécuter de manière interactive, mais de manière systématique",
+         correct="Oui! Tout ce qui est dans global sera exécuté une fois et une seule au lancement de l'application",
+         allow_retry=TRUE
+)
+```
+
+### 1.5 Et tout ça, ça tourne où?
+
+```{r where_it_runs}
+question("Les applis Shiny que vous construirez aujourd'hui seront exécutées sur quelle machine?",
+         answer("la vôtre", correct=TRUE),
+         answer("le serveur de Shinyapps.io"),
+         answer("celle de Lise Vaudor"),
+         answer("le serveur Huma-Num"),
+         incorrect="Non! aujourd'hui vous n'allez pas déployer vos applis vers un serveur distant.",
+         correct="Oui! Aujourd'hui tout aura lieu sur votre propre machine. C'est pour ça que vous avez besoin d'avoir installé non seulement R mais aussi Shiny et tous les autres packages que nous allons utiliser pour ces applis.",
+         allow_retry=TRUE
+)
+```
+
+### 1.6 Un premier exemple
+
+Vous pouvez copier-coller le code suivant dans un fichier "app.R" sous RStudio.
+
+Remplacez les "___" par les valeurs appropriées et tentez de faire fonctionner l'appli.
+
+```{r, echo=TRUE, eval=FALSE}
+library(shiny)
+
+ui <- fluidPage(
+        sliderInput("___",
+                    "Number of bins:",
+                    min = 1,
+                    max = 50,
+                    value = 30),
+       plotOutput("_____")
+)
+
+server <- function(input, output) {
+    output$___ <- renderPlot({
+        x    <- faithful[, 2]
+        bins <- seq(min(x), max(x), length.out = input$___ + 1)
+        hist(x, breaks = bins, col = 'darkgray', border = 'white')
+    })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+```{r id_choose}
+question("Pour compléter le code ci-dessus, il faut fournir",
+    answer("quatre chaînes de caractère distinctes"),
+    answer("deux chaînes de caractère distinctes, une pour l'input et l'autre pour l'output", correct=TRUE),
+    answer("les deux chaînes de caractère suivantes: `bins` et `distPlot`"),
+    incorrect="il y a un identifiant pour l'input, un identifiant pour l'output.",
+    correct="Oui! le choix des identifiants (pour l'input comme pour l'output) sont à votre libre appréciation (mais il vaut mieux choisir des choses un peu parlantes tout de même...).",
+    allow_retry=TRUE
+)
+```
+
+
+## Partie 2: Inputs et outputs
+
+### 2.1 xxxInput
+
+```{r, echo=TRUE, eval=FALSE}
+library(shiny)
+
+ui <- fluidPage(
+    ______(inputId="prenom",
+           label="Quel est ton prénom?",
+           value="Lise"),
+    textOutput("salutation")
+)
+
+server <- function(input, output) {
+    output$salutation <- renderText({
+       x=paste("Salut",input$prenom,"!")
+    })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+```{r widget_choose}
+question("Quel est le type de widget approprié pour l'appli ci-dessus?",
+    answer("numericInput"),
+    answer("textInput", correct=TRUE),
+    answer("renderText"),
+    correct="Oui! L'input est de nature textuelle.",
+    incorrect="Non! il faut rentrer du texte, et on parle ici de widget côté ui => xxxInput et non renderXXX.",
+    allow_retry=TRUE
+)
+```
+
+### 2.2 Production d'une table
+
+Nous allons maintenant utiliser un jeu de données `prenoms`. Il est fourni dans un package en développement (rendu disponible sur github [ici] (https://github.com/ThinkR-open/prenoms) et installable si vous avez le package `devtools` installé sur votre machine). Attention il y a aussi un package `prenoms` sur le CRAN mais ce n'est pas le même! (celui-là contient des données pour le Quebec...). L'installation de devtools pouvant prendre un peu de temps **je vous fournis directement le jeu de données `prenoms.RDS`**.
+
+Si vous avez `devtools`:
+
+```{r, eval=FALSE}
+devtools::install_github( "ThinkR-open/prenoms")
+library(prenom)
+data(prenoms)
+```
+
+Si vous n'avez pas `devtools`:
+
+```{r, eval=FALSE}
+prenoms=readRDS("prenoms.RDS")
+```
+
+Cette table contient des données sur les prénoms de bébés nés en France métropolitaine entre 1900 et 2019, détaillées par département. Les colonnes sont:
+
+- `year`: l'année, un entier compris entre 1900 et 2019
+- `sex`: le sexe, soit "M", soit "F"
+- `name`: le prénom
+- `n`: le nombre de naissances dans le département
+- `dpt`: le département
+- `prop`: la proportion de naissances pour l'année considérée dans le département
+
+Considérez l'appli suivante:
+
+```{r, echo=TRUE, eval=FALSE}
+library(shiny)
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+
+ui <- fluidPage(
+    textInput(inputId="prenom",
+              label="Quel prénom?",
+              value="Lise"),
+    dataTableOutput("table_name_years")
+)
+
+server <- function(input, output) {
+    output$___ <- renderDataTable({
+    ______    
+    })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+Copiez ce code dans app.R sous RStudio et modifiez l'appli de manière à **afficher la table correspondant au prénom choisi en input**, et montrant le nombre d'occurrences du prénom par année pour l'ensemble de la France (pas par département).
+
+Il faudra remobiliser un peu ce que vous avez appris sur l'usage du package `dplyr`...
+
+
+```{r renderTable}
+question('Que se passe-t-il si la valeur par défaut pour l\'input de prénom est la chaîne de caractère vide ""?',
+    answer("L'appli ne fonctionne pas"),
+    answer("La table renvoyée est vide", correct=TRUE),
+    answer("Toute la table -tous prénoms confondus- est renvoyée."),
+    correct="Oui! L'appli fonctionne tout de même, par contre le résultat de 'filter' est une table à 0 lignes.",
+    incorrect="Non! Vous pouvez tester en mettant value=''",
+    allow_retry=TRUE
+)
+```
+
+**Remarque:** c'est peut-être le moment de tester la différence entre tableOutput() et dataTableOutput() si vous le souhaitez...
+
+### 2.3 Filtre par années min et max
+
+L'appli suivante est la "solution" de l'exercice précédent. Remarquez que l'appel à library() peut se faire depuis la partie "global/global.R" (i.e. avant ui et server). De cette manière, les fonctions de la librairie deviennent accessibles à toutes les parties de l'appli.
+
+```{r, echo=TRUE, eval=FALSE}
+library(shiny)
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+
+ui <- fluidPage(
+    textInput(inputId="prenom",
+              label="Quel est ton prénom?",
+              value="Lise"),
+    dataTableOutput("table_name_years")
+)
+
+server <- function(input, output) {
+    output$table_name_years <- renderDataTable({
+        prenoms %>% 
+            filter(name==input$prenom) %>% 
+            group_by(year) %>% 
+            summarise(n=sum(n)) 
+    })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+Copiez cette application dans app.R (dans RStudio).
+
+Voici un exemple de "double-ended slider". Le fait de rentrer deux valeurs dans "value" rend le slider double.
+
+```{r, echo=TRUE,eval=FALSE}
+sliderInput("clicclac",
+            "Clic et clac",
+            min=1,
+            max=20,
+            value=c(5,10))
+```
+
+Modifiez l'appli ci-dessus de manière à permettre à l'utilisateur de **fixer une année minimale et une année maximale** pour la table, par un "double-ended slider".
+
+Répondez ensuite à cette question:
+
+```{r tableau_minmax}
+question("Le tableau est re-généré dès que:",
+         answer("Le 'prénom' change", correct=TRUE),
+         answer("Le premier cran du slider (min) change", correct=TRUE),
+         answer("Le deuxième cran du slider (max) change", correct=TRUE),
+         correct="OUI! Tout input qui intervient dans le calcul du tableau cause la re-génération du tableau s'il est modifié",
+         incorrect="Non. Plusieurs réponses sont possibles...",
+         allow_retry=TRUE)
+
+```
+
+### 2.4 Production d'un graphique
+
+Vous vous souvenez de ggplot? (j'espère hein!!). Modifiez le code suivant pour **produire un graphique** montrant le nombre d'occurrences d'un prénom (en y) par année (en x) pour l'ensemble de la France et pour les années dans l'intervalle choisi.. Les librairies `ggplot2`, `dplyr`, et le jeu de données `prenoms` ont déjà été chargés dans l'environnement.
+
+
+```{r premier_graphique-setup}
+library(ggplot2)
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+```
+
+```{r premier_graphique, exercise=TRUE}
+leprenom="Jean"
+lemin=1930
+lemax=1960
+name_years=prenoms %>%  
+ filter(name==leprenom,
+        year>=lemin,
+        year<=lemax) %>% 
+ group_by(year) %>% 
+ summarise(n=sum(n))  
+ggplot(_____)+
+ _______
+```
+
+```{r premier_graphique-solution}
+leprenom="Jean"
+lemin=1930
+lemax=1960
+name_years=prenoms %>%  
+ filter(name==leprenom,
+        year>=lemin,
+        year<=lemax) %>% 
+ group_by(year) %>% 
+ summarise(n=sum(n))  
+ggplot(name_years, aes(x=year,y=n))+
+ geom_line()
+```
+
+
+### 2.5 renderPlot
+
+Modifiez l'appli ci-dessous de manière à **ajouter un graphique** montrant le nombre d'occurrences du prénom choisi (en y) par année (en x) pour l'ensemble de la France et pour les années dans l'intervalle choisi.
+
+Il faudra bien sûr modifier le code produisant le graphique pour que le résultat dépende des inputs (`input$prenom` et `input$minmax_year`).
+
+```{r, echo=TRUE, eval=FALSE}
+library(shiny)
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+
+ui <- fluidPage(
+ textInput(inputId="prenom",
+           label="Quel est ton prénom?",
+           value="Lise"),   
+ sliderInput("minmax_year",
+             "années min et max",
+             min=1900,
+             max=2018,
+             value=c(1900,2018)),
+ dataTableOutput("table_name_years")
+)
+
+server <- function(input, output) {
+ output$table_name_years <- renderDataTable({
+   name_years=prenoms %>% 
+     filter(name==input$prenom,
+            year>=input$minmax_year[1],
+            year<=input$minmax_year[2]) %>% 
+     group_by(year) %>% 
+     summarise(n=sum(n))  
+ })
+}
+
+shinyApp(ui = ui, server = server)
+
+```
+
+```{r premier_renderPlot}
+question("De quoi avez-vous eu besoin?:",
+        answer("De charger la librairie ggplot2", correct=TRUE),
+        answer("De rajouter des widgets d'input"),
+        answer("D'utiliser la fonction renderPlot()", correct=TRUE),
+        answer("D'utiliser la fonction plotOutput()", correct=TRUE),
+        correct="OUI! Vous pouvez réutiliser les inputs qui servent déjà à produire le tableau. Par contre, vous avez besoin de tout le reste.",
+        incorrect="Non. Plusieurs réponses sont possibles...",
+        allow_retry=TRUE)
+
+```
+
+## Partie 3: Panels et layouts
+
+### 3.1 Ajout d'un wellPanel
+
+Voici la solution (ou du moins, *une* solution) pour l'exercice précédent.
+
+```{r, echo=TRUE, eval=FALSE}
+library(shiny)
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+
+ui <- fluidPage(
+    textInput(inputId="prenom",
+              label="Quel est ton prénom?",
+              value="Lise"),   
+    sliderInput("minmax_year",
+                "années min et max",
+                min=1900,
+                max=2018,
+                value=c(1900,2018)),
+    dataTableOutput("table_name_years"),
+    plotOutput("plot_name_years")
+)
+
+server <- function(input, output) {
+    output$table_name_years <- renderDataTable({
+        prenoms %>% 
+            filter(name==input$prenom,
+                   year>=input$minmax_year[1],
+                   year<=input$minmax_year[2]) %>% 
+            group_by(year) %>% 
+            summarise(n=sum(n))  
+    })
+    output$plot_name_years <- renderPlot({
+        name_years=prenoms %>% 
+            filter(name==input$prenom,
+                   year>=input$minmax_year[1],
+                   year<=input$minmax_year[2]) %>% 
+            group_by(year) %>% 
+            summarise(n=sum(n))  
+        ggplot(name_years,aes(x=year,y=n)) +
+            geom_line()+
+            labs(title=paste("Occurences du prénom '",
+                             input$prenom,
+                             "' par année"))
+        
+    })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+L'appli commence à être un peu chargée, et c'est un peu pénible de devoir scroller pour aller voir le graphique, sous le tableau. Nous allons donc **arranger un peu sa disposition**.
+
+Copiez la dans app.R dans RStudio.
+
+Faites en sorte que les deux widgets d'input soient dans un même "wellPanel".
+
+```{r wellPanel}
+question("Aurait-on pu rassembler les deux outputs dans un même wellPanel également?",
+         answer("Non, un wellPanel rassemble des éléments de type `widget`"),
+         answer("Oui. Pourquoi pas?", correct=TRUE),
+         answer("Non, car on construit le wellPanel côté ui."),
+         correct="Oui! Certes, le wellPanel() est appelé côté ui, mais il peut très bien rassembler les deux éléments construits par textOutput()",
+         incorrect="Et si! Certes, le wellPanel() est appelé côté ui, mais il peut très bien rassembler les deux éléments construits par textOutput()",
+         allow_retry=TRUE
+)
+```
+
+### 3.2 fluidRow
+
+Voici une solution pour l'exercice précédent:
+
+```{r, eval=FALSE, echo=TRUE}
+library(shiny)
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+library(ggplot2)
+
+ui <- fluidPage(
+    wellPanel(
+        textInput(inputId="prenom",
+                  label="Quel est ton prénom?",
+                  value="Lise"),   
+        sliderInput("minmax_year",
+                    "années min et max",
+                    min=1900,
+                    max=2018,
+                    value=c(1900,2018))
+    ), #wellPanel
+    dataTableOutput("table_name_years"),
+    plotOutput("plot_name_years")
+)
+
+server <- function(input, output) {
+    output$table_name_years <- renderDataTable({
+        name_years=prenoms %>% 
+            filter(name==input$prenom,
+                   year>=input$minmax_year[1],
+                   year<=input$minmax_year[2]) %>% 
+            group_by(year) %>% 
+            summarise(n=sum(n))  
+        name_years
+    })
+    output$plot_name_years <- renderPlot({
+        name_years=prenoms %>% 
+            filter(name==input$prenom,
+                   year>=input$minmax_year[1],
+                   year<=input$minmax_year[2]) %>% 
+            group_by(year) %>% 
+            summarise(n=sum(n))  
+        ggplot(name_years,aes(x=year,y=n)) +
+            geom_line()+
+            labs(title=paste("Occurences du prénom '",
+                             input$prenom,
+                             "' par année"))
+        
+    })
+}
+
+shinyApp(ui = ui, server = server)
+
+```
+
+Maintenant, disposez le tableau et le graphique l'un à côté de l'autre. Vous pouvez allouer une largeur moins importante au tableau (qui ne compte que deux colonnes) qu'au graphique.
+
+
+```{r layout_fluidRow}
+question("Dans cette disposition:",
+         answer("Le tableau est coupé dans la hauteur pour correspondre à la hauteur du graphique"),
+         answer("Le graphique est allongé pour correspondre à la hauteur du tableau"),
+         answer("La hauteur des deux éléments est adaptée pour correspondre à une hauteur 'moyenne'"),
+         answer("La hauteur des deux éléments est inchangée", correct=TRUE),
+         correct="Oui! C'est la hauteur de la ligne elle-même qui s'adapte au plus grand des éléments qu'elle contient (ici le tableau).",
+         allow_retry=TRUE
+)
+```
+
+### 3.3 Un onglet vers un autre graphique
+
+Alternativement, vous pourriez proposer **un autre graphique** qui permette de visualiser les effectifs par département plutôt que les effectifs sommés pour l'ensemble de la France métropolitaine.
+
+Voici la solution de l'exercice précédent, si besoin:
+  
+```{r, echo=TRUE, eval=FALSE}
+library(shiny)
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+library(ggplot2)
+
+ui <- fluidPage(
+  wellPanel(
+    textInput(inputId="prenom",
+              label="Quel est ton prénom?",
+              value="Lise"),   
+    sliderInput("minmax_year",
+                "années min et max",
+                min=1900,
+                max=2018,
+                value=c(1900,2018))
+  ), #wellPanel
+  fluidRow(
+    column(width=4,
+           dataTableOutput("table_name_years")
+    ),#column
+    column(width=8,
+           plotOutput("plot_name_years")
+    )#column
+  )#fluidRow
+)
+
+server <- function(input, output) {
+  output$table_name_years <- renderDataTable({
+    name_years=prenoms %>% 
+      filter(name==input$prenom,
+             year>=input$minmax_year[1],
+             year<=input$minmax_year[2]) %>% 
+      group_by(year) %>% 
+      summarise(n=sum(n))  
+    name_years
+  })
+  output$plot_name_years <- renderPlot({
+    name_years=prenoms %>% 
+      filter(name==input$prenom,
+             year>=input$minmax_year[1],
+             year<=input$minmax_year[2]) %>% 
+      group_by(year) %>% 
+      summarise(n=sum(n))  
+    ggplot(name_years,aes(x=year,y=n)) +
+      geom_line()+
+      labs(title=paste("Occurences du prénom '",
+                       input$prenom,
+                       "' par année"))
+    
+  })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+Rajoutez un "tabsetPanel" à cette appli pour que l'utilisateur puisse naviguer entre le premier graphique (montrant les données sommées pour la France métropolitaine), et l'autre graphique (montrant les données pour l'ensemble des départements).
+
+Puis répondez à cette question:
+
+```{r deuxieme_renderPlot_tabsetPanel}
+question("Votre appli compte maintenant (plusieurs réponses possibles):",
+    answer("1 appel à renderPlot()"),
+    answer("2 appels à renderPlot()",correct=TRUE),
+    answer("1 appel à plotOutput()"),
+    answer("2 appels à plotOuput()", correct=TRUE),
+    answer("1 appel à tabsetPanel()",correct=TRUE),
+    answer("2 appel à tabsetPanel()"),
+    answer("1 appel à tabPanel()"),
+    answer("2 appels à tabPanel()",correct=TRUE),
+    correct="Oui! autant d'appels à renderPlot() et plotOutput() que de plots distincts. Un appel à tabsetPanel() qui regroupe deux appels à tabPanel()",
+    allow_retry=TRUE
+)
+```
+
+## Partie 4: Fonctions et réactivité
+
+### 4.1 Ecrire des fonctions
+
+Voici une solution pour l'exercice précédent:
+
+```{r, echo=TRUE, eval=FALSE}
+library(shiny)
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+library(ggplot2)
+
+ui <- fluidPage(
+    wellPanel(
+        textInput(inputId="prenom",
+                  label="Quel est ton prénom?",
+                  value="Lise"),   
+        sliderInput("minmax_year",
+                    "années min et max",
+                    min=1900,
+                    max=2018,
+                    value=c(1900,2018))
+    ), #wellPanel
+    fluidRow(
+        column(width=4,
+               dataTableOutput("table_name_years")
+        ),#column
+        column(width=8,
+               tabsetPanel(
+                   tabPanel("France",
+                            plotOutput("plot_name_years")
+                   ),#tabPanel
+                   tabPanel("Par dép.",
+                            plotOutput("plot_name_years_dep")
+                   )#tabPanel
+               )#tabsetPanel
+        )#column
+    )#fluidRow
+)
+
+server <- function(input, output) {
+    output$table_name_years <- renderDataTable({
+        name_years=prenoms %>% 
+            filter(name==input$prenom,
+                   year>=input$minmax_year[1],
+                   year<=input$minmax_year[2]) %>% 
+            group_by(year) %>% 
+            summarise(n=sum(n)) 
+        name_years
+    })
+    output$plot_name_years <- renderPlot({
+        name_years=prenoms %>% 
+            filter(name==input$prenom,
+                   year>=input$minmax_year[1],
+                   year<=input$minmax_year[2]) %>% 
+            group_by(year) %>% 
+            summarise(n=sum(n))  
+        ggplot(name_years,aes(x=year,y=n)) +
+            geom_line()+
+            labs(title=paste("Occurences du prénom '",
+                             input$prenom,
+                             "' par année"))
+        
+    })
+    output$plot_name_years_dep <- renderPlot({
+        name_years_dep=prenoms %>% 
+            filter(name==input$prenom, 
+            filter(year>=input$minmax_year[1],
+                   year<=input$minmax_year[2])
+        ggplot(name_years_dep,aes(x=year,y=n, color=dpt)) +
+            geom_line()+
+            labs(title=paste("Occurences du prénom '",
+                             input$prenom,
+                             "' par année et par département"))
+        
+    })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+Avez-vous remarqué comme certains morceaux de code sont répétés? Par exemple,
+
+```{r, echo=TRUE, eval=FALSE}
+name_years=prenoms %>% 
+    filter(name==input$prenom,
+           year>=input$minmax_year[1],
+           year<=input$minmax_year[2]) %>% 
+    group_by(year) %>% 
+    summarise(n=sum(n))  
+```
+
+Un des principes de base en programmation R, c'est de **transformer en fonction** tout morceau de code qui est répété au moins 2 ou 3 fois.
+
+Essayez de compléter la fonction suivante pour qu'elle renvoie le **tableau des effectifs par année (sommés pour la France métropolitaine)** correspondant au **prénom et aux années min et max** passées en input. Le package `dplyr` et le jeu de données `prenoms` sont déjà chargés dans l'environnement.
+
+```{r complete_function, exercise=TRUE}
+f_name_years=function(prenom,annee_min,annee_max){
+    ___
+    ___
+    return(___)
+}
+
+# Testez votre fonction:
+f_name_years("Lise",1950,2000)
+```
+
+```{r complete_function-setup}
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+```
+
+```{r complete_function-solution}
+f_name_years=function(prenom,annee_min,annee_max){
+        name_years=prenoms %>% 
+            filter(name==prenom,
+                   year>=annee_min,
+                   year<=annee_max) %>% 
+            group_by(year) %>% 
+            summarise(n=sum(n))  
+    return(name_years)
+}
+
+# Testez votre fonction:
+f_name_years("Lise",1980,1985)
+```
+
+### 4.2 Utiliser une fonction
+
+Maintenant, vous pouvez **utiliser cette fonction pour simplifier un peu le code de votre appli**.
+
+Reprenez le code de l'appli, définissez-y votre fonction (dans la partie "global"), et utilisez-la...
+
+Puis répondez à la question suivante:
+
+```{r question_f_name_years}
+question("Dans votre appli, vous avez",
+    answer("appelé deux fois f_name_years()", correct=TRUE),
+    answer("appelé trois fois f_name_years()"),
+    answer("les arguments de f_name_years() correspondent aux inputs input$prenom et input$minmax_year",correct=TRUE),
+    answer("vous avez juste appelé f_name_years() sans préciser les arguments"),
+    correct="Oui! f_name_years() sert à la table et au premier graphique, pas au deuxième, et la fonction doit prendre en argument les inputs utilisateurs pour que l'appli fonctionne correctement.",
+    allow_retry=TRUE
+)
+```
+
+### 4.3 Enrichir la fonction
+
+L'appli que je vous demandais d'implémenter précédemment devait ressembler à celle-ci:
+
+```{r, echo=TRUE, eval=FALSE}
+library(shiny)
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+library(ggplot2)
+
+f_name_years=function(prenom,annee_min,annee_max,par_departement=FALSE){
+    name_years=prenoms %>% 
+        filter(name==prenom,
+               year>=annee_min,
+               year<=annee_max) %>% 
+        group_by(year) %>% 
+        summarise(n=sum(n)) 
+    return(name_years)
+}
+
+ui <- fluidPage(
+    wellPanel(
+        textInput(inputId="prenom",
+                  label="Quel est ton prénom?",
+                  value="Lise"),   
+        sliderInput("minmax_year",
+                    "années min et max",
+                    min=1900,
+                    max=2018,
+                    value=c(1900,2018))
+    ), #wellPanel
+    fluidRow(
+        column(width=4,
+               dataTableOutput("table_name_years")
+        ),#column
+        column(width=8,
+               tabsetPanel(
+                   tabPanel("France",
+                            plotOutput("plot_name_years")
+                   ),#tabPanel
+                   tabPanel("Par dép.",
+                            plotOutput("plot_name_year_dep")
+                   )#tabPanel
+               )#tabsetPanel
+        )#column
+    )#fluidRow
+)
+
+server <- function(input, output) {
+    output$table_name_year <- renderDataTable({
+        f_name_years(input$prenom,
+                     input$minmax_year[1],
+                     input$minmax_year[2]) 
+    })
+    output$plot_name_year <- renderPlot({
+        name_years=f_name_years(input$prenom,
+                                input$minmax_year[1],
+                                input$minmax_year[2]) 
+        ggplot(name_years,aes(x=year,y=n)) +
+            geom_line()+
+            labs(title=paste("Occurences du prénom '",
+                             input$prenom,
+                             "' par année"))
+        
+    })
+    output$plot_name_year_dep <- renderPlot({
+        name_years_dep=prenoms %>% 
+            filter(name==input$prenom) %>% 
+            filter(year>=input$minmax_year[1],
+                   year<=input$minmax_year[2])
+        ggplot(name_years_dep,aes(x=year,y=n, color=dpt)) +
+            geom_line()+
+            labs(title=paste("Occurences du prénom '",
+                             input$prenom,
+                             "' par année et par département"))
+        
+    })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+Le code est légèrement simplifié par l'usage de la fonction `f_name_years()` mais tant qu'à faire j'aimerais également pouvoir me servir de cette fonction pour le deuxième graphique (celui par département)...
+
+Reprenons donc la fonction `f_name_years()`. J'aimerais que vous la modifiiez de manière à pouvoir l'**utiliser pour produire le deuxième graphique** (celui où on affiche les résultats par département). Vous pourriez par exemple ajouter un **nouvel argument** `par_departement`, qui, s'il est vrai, implique que l'on obtient les résultats par département plutôt que pour l'ensemble de la France métropolitaine. 
+
+Modifiez le code de la fonction dans ce sens (`dplyr` et le jeu de données `prenoms` ont déjà été chargés dans l'environnement):
+  
+  
+```{r enrich_function-setup}
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+```
+
+```{r enrich_function, exercise=TRUE}
+f_name_years=function(prenom,annee_min,annee_max){
+  name_years=prenoms %>% 
+    filter(name==prenom,
+           year>=annee_min,
+           year<=annee_max) %>% 
+    group_by(year) %>% 
+    summarise(n=sum(n))  
+  return(name_years)
+}
+
+# Testez votre fonction:
+f_name_years("Lise",1980,1985)
+```
+
+```{r enrich_function-solution}
+f_name_years=function(prenom,annee_min,annee_max,par_departement=FALSE){
+  name_years=prenoms %>% 
+    filter(name==prenom,
+           year>=annee_min,
+           year<=annee_max)
+  if(!par_departement){ 
+    name_years=name_years %>% 
+      group_by(year) %>% 
+      summarise(n=sum(n)) 
+  }
+  return(name_years)
+}
+
+# Testez votre fonction:
+f_name_years("Lise",1980,1985,par_departement=TRUE)
+```
+
+Utilisez votre fonction `f_name_years()` dans sa nouvelle mouture pour simplifier l'appli. Puis répondez à la question suivante:
+
+
+```{r question_f_name_years_par_departement}
+question("Dans votre appli",
+    answer("vous appelez trois fois f_name_years()", correct=TRUE),
+    answer("Les trois appels dépendent des mêmes inputs utilisateur",
+            correct=TRUE),
+    answer("Les trois appels ont les mêmes valeurs d'argument"),
+    correct="Oui! Dans les trois appels les mêmes inputs utilisateur sont utilisés (`input$prenom`, `input$minmax_year`) par contre les arguments ne sont pas trois fois identiques (deux fois `par_departement=FALSE`, une fois `par_departement=TRUE`)",
+    allow_retry=TRUE
+)
+```
+
+### 4.4 Ordre d'exécution
+
+On peut essayer de comprendre l'ordre d'exécution des codes de l'appli shiny en rajoutant des instructions `print()` dans les codes.
+
+Pour tester vous pouvez utiliser l'appli suivante:
+
+```{r, eval=FALSE, echo=TRUE}
+library(shiny)
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+library(ggplot2)
+
+f_name_years=function(prenom,annee_min,annee_max,par_departement=FALSE){
+    print("............... executing f_name_years")
+    name_years=prenoms %>% 
+        filter(name==prenom,
+               year>=annee_min,
+               year<=annee_max)
+    if(!par_departement){ 
+        name_years=name_years %>% 
+            group_by(year) %>% 
+            summarise(n=n(),.groups = 'drop')
+    }
+    return(name_years)
+}
+
+ui <- fluidPage(
+    wellPanel(
+        textInput(inputId="prenom",
+                  label="Quel est ton prénom?",
+                  value="Lise"),   
+        sliderInput("minmax_year",
+                    "années min et max",
+                    min=1900,
+                    max=2018,
+                    value=c(1900,2018))
+    ), #wellPanel
+    fluidRow(
+        column(width=4,
+               dataTableOutput("table_name_years")
+        ),#column
+        column(width=8,
+               tabsetPanel(
+                   tabPanel("France",
+                            plotOutput("plot_name_years")
+                   ),#tabPanel
+                   tabPanel("Par dép.",
+                            plotOutput("plot_name_years_dep")
+                   )#tabPanel
+               )#tabsetPanel
+        )#column
+    )#fluidRow
+)
+
+server <- function(input, output) {
+   
+    output$table_name_years <- renderDataTable({
+        print("in table_name_years")
+        f_name_years(input$prenom,
+                     input$minmax_year[1],
+                     input$minmax_year[2]) 
+    })
+    output$plot_name_years <- renderPlot({
+        print("in plot_name_years")
+        name_years=f_name_years(input$prenom,
+                                input$minmax_year[1],
+                                input$minmax_year[2]) 
+        ggplot(name_years,aes(x=year,y=n)) +
+            geom_line()+
+            labs(title=paste("Occurences du prénom '",
+                             input$prenom,
+                             "' par année"))
+        
+    })
+    output$plot_name_years_dep <- renderPlot({
+        print("in plot_name_years_dep")
+        name_years_dep= f_name_years(input$prenom,
+                                     input$minmax_year[1],
+                                     input$minmax_year[2],
+                                     par_departement=TRUE) 
+        ggplot(name_years_dep,aes(x=year,y=n, color=dpt)) +
+            geom_line()+
+            labs(title=paste("Occurences du prénom '",
+                             input$prenom,
+                             "' par année et par département"))
+        
+    })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+
+```{r quiz_reac}
+quiz(
+    question("Au lancement de l'application, les codes qui s'exécutent sont",
+             answer("celui qui correspond à `table_name_years` (1 fois)", correct=TRUE),
+             answer("celui qui correspond `à plot_name_years` (1 fois)", correct=TRUE),
+             answer("celui qui correspond `à plot_name_years_dep` (1 fois)"),
+             correct="Oui! le code est executé pour les outputs qui s'affichent effectivement au lancement de l'application (pas plot_name_year_dep, du coup!).",
+             allow_retry=TRUE
+    ),
+    question("Du coup, au lancement de l'application, la fonction f_name_years() est exécutée au total",
+             answer("une seule fois"),
+             answer("deux fois", correct=TRUE),
+             answer("trois fois"), 
+             correct="Eh oui! Deux fois: une fois pour table_name_year, une fois pour plot_name_year.",
+             allow_retry=TRUE),
+    question("Quand on affiche l'onglet correspondant au deuxième graphique, du coup, que se passe-t-il?",
+             answer("Le code correspondant à `table_name_years` est réexecuté"),
+             answer("Le code correspondant à `plot_name_years_dep` est exécuté", correct=TRUE),
+             answer("le premier graphique (correspondant à `plot_name_years`) est effacé et devra être généré à nouveau quand on rechangera d'onglet"),
+             correct="L'affichage de l'onglet et donc de l'output plot_name_year_dep entraîne l'exécution du code correspondant mais n'a pas d'impact sur les autres productions.",
+             allow_retry=TRUE),
+    question("Revenez au premier onglet (graphique `plot_name_years`). Changez l'input `prenom`. Quelles sont les propositions qui sont vraies?",
+             answer("Le code `table_name_years` est réexecuté",correct=TRUE),
+             answer("Le code `plot_name_years` est réexecuté", correct=TRUE),
+             answer("Le code `plot_name_years_dep` est réexecuté"),
+             answer("La fonction `f_names_year()` est appelée une seule fois"),
+             answer("La fonction `f_names_year()` est appelée deux fois", correct=TRUE),
+             answer("La fonction `f_names_year()` est appelée trois fois"),
+             correct="A chaque fois qu'un des inputs (`input$name` ou `input$minmax_year`) change, les codes qui dépendent des inputs en question, et qui correspondent à des outputs affichés à l'instant t, sont réexecutés.",
+             allow_retry=TRUE)
+)
+```
+
+### 4.5 Réactive
+
+Eh oui! Ici le code de la fonction `f_names_year()` est exécuté **à chaque fois qu'un des inputs change**, et ce **pour tous les outputs** (donc deux fois pour chaque changement d'input ici). Dans le cas qui nous intéresse ici, le calcul effectué par la fonction n'est pas très long, mais imaginez qu'il prenne un peu de temps (quelques secondes, quelques dizaines de secondes...)... Cela semble un gaspillage de ressource que de calculer plusieurs fois la même chose...
+
+Vous allez essayer de remédier à cela en définissant une réactive.
+
+
+## Partie 5: Style et customisation
+
+### 5.1 Ajouter du html
+
+La solution à l'exercice précédent est:
+
+```{r, eval=FALSE, echo=TRUE}
+library(shiny)
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+library(ggplot2)
+
+f_name_years=function(prenom,annee_min,annee_max,par_departement=FALSE){
+  name_years=prenoms %>% 
+    filter(name==prenom,
+           year>=annee_min,
+           year<=annee_max)
+  if(!par_departement){ 
+    name_years=name_years %>% 
+      group_by(year) %>% 
+      summarise(n=n(),.groups = 'drop')
+  }
+  return(name_years)
+}
+
+ui <- fluidPage(
+  wellPanel(
+    textInput(inputId="prenom",
+              label="Quel est ton prénom?",
+              value="Lise"),   
+    sliderInput("minmax_year",
+                "années min et max",
+                min=1900,
+                max=2018,
+                value=c(1900,2018))
+  ), #wellPanel
+  fluidRow(
+    column(width=4,
+           dataTableOutput("table_name_years")
+    ),#column
+    column(width=8,
+           tabsetPanel(
+             tabPanel("France",
+             plotOutput("plot_name_years")
+           ),#tabPanel
+           tabPanel("Par dép.",
+                    plotOutput("plot_name_years_dep")
+           )#tabPanel
+    )#tabsetPanel
+  )#column
+)#fluidRow
+)
+
+server <- function(input, output) {
+  
+  r_name_years=reactive({
+    print("calcul de name_years")
+    f_name_years(input$prenom,
+                 input$minmax_year[1],
+                 input$minmax_year[2])
+  })
+  
+  output$table_name_years <- renderDataTable({
+    name_years=r_name_years()
+  })
+  output$plot_name_years <- renderPlot({
+    name_years=r_name_years()
+    ggplot(name_years,aes(x=year,y=n)) +
+      geom_line()+
+      labs(title=paste("Occurences du prénom '",
+                       input$prenom,
+                       "' par année"))
+    
+  })
+  output$plot_name_years_dep <- renderPlot({
+    name_years_dep= f_name_years(input$prenom,
+                                 input$minmax_year[1],
+                                 input$minmax_year[2],
+                                 par_departement=TRUE) 
+    ggplot(name_years_dep,aes(x=year,y=n, color=dpt)) +
+      geom_line()+
+      labs(title=paste("Occurences du prénom '",
+                       input$prenom,
+                       "' par année et par département"))
+    
+  })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+Essayez de matérialiser l'existence de **deux parties dans l'appli** (une qui contient les inputs et l'autre les outputs) en rajoutant des **titres de niveau 3** "Infos" et "Résultats".
+
+```{r ajout_html}
+question("Vous avez pour ce faire:",
+         answer("changé des choses dans la partie `global`"),
+         answer("changé des choses dans la partie `ui`",correct=TRUE),
+         answer("changé des choses dans la partie `server`"),
+         answer("utilisé une seule fois la fonction `h3()` ou `tags$h3()`"),
+         answer("utilisé deux fois la fonction `h3()` ou `tags$h3()`"), correct=TRUE)
+
+```
+
+### 5.2 Changer de style via css
+
+La solution à l'exercice précédent est:
+
+```{r, eval=FALSE, echo=TRUE}
+library(shiny)
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+library(ggplot2)
+
+f_name_years=function(prenom,annee_min,annee_max,par_departement=FALSE){
+  name_years=prenoms %>% 
+    filter(name==prenom,
+           year>=annee_min,
+           year<=annee_max)
+  if(!par_departement){ 
+    name_years=name_years %>% 
+      group_by(year) %>% 
+      summarise(n=n(),.groups = 'drop')
+  }
+  return(name_years)
+}
+
+ui <- fluidPage(
+  wellPanel(
+    h3("Infos"),
+    textInput(inputId="prenom",
+              label="Quel est ton prénom?",
+              value="Lise"),   
+    sliderInput("minmax_year",
+                "années min et max",
+                min=1900,
+                max=2018,
+                value=c(1900,2018))
+  ), #wellPanel
+  h3("Résultats"),
+  fluidRow(
+    column(width=4,
+           dataTableOutput("table_name_years")
+    ),#column
+    column(width=8,
+           tabsetPanel(
+             tabPanel("France"),
+                      plotOutput("plot_name_years")
+             ),#tabPanel
+             tabPanel("Par dép.",
+                      plotOutput("plot_name_years_dep")
+             )#tabPanel
+           )#tabsetPanel
+    )#column
+  )#fluidRow
+)
+
+server <- function(input, output) {
+  
+  r_name_years=reactive({
+    print("calcul de name_years")
+    f_name_years(input$prenom,
+                 input$minmax_year[1],
+                 input$minmax_year[2])
+  })
+  
+  output$table_name_years <- renderDataTable({
+    r_name_years()
+  })
+  output$plot_name_years <- renderPlot({
+    name_years=r_name_years()
+    ggplot(name_years,aes(x=year,y=n)) +
+      geom_line()+
+      labs(title=paste("Occurences du prénom '",
+                       input$prenom,
+                       "' par année"))
+    
+  })
+  output$plot_name_years_dep <- renderPlot({
+    name_years_dep= f_name_years(input$prenom,
+                                 input$minmax_year[1],
+                                 input$minmax_year[2],
+                                 par_departement=TRUE) 
+    ggplot(name_years_dep,aes(x=year,y=n, color=dpt)) +
+      geom_line()+
+      labs(title=paste("Occurences du prénom '",
+                       input$prenom,
+                       "' par année et par département"))
+    
+  })
+}
+shinyApp(ui = ui, server = server)
+```
+
+Vous pouvez tenter de modifier le style css, par exemple en utilisant un thème prédéfini (il y en a deux que j'ai déjà téléchargés dans le dossier `www` si vous voulez tester...). Essayez par exemple le thème `bootstrap.min_dark.css`.
+
+```{r question_theme_dark}
+question("Avec ce thème:",
+         answer("Le fond (y compris le fond du wellPanel) est sombre."),
+         answer("Le fond est généralement sombre, mais pas celui du wellPanel qui est inchangé.", correct=TRUE),
+         correct="Vous l'aurez compris, cette question un peu bêbête vise simplement à vérifier que vous avez bien réussi à changer de thème.", 
+         allow_retry=TRUE)
+```
+
+### 5.3 Ajouter un logo
+
+Voici la solution à l'exercice précédent:
+  
+  ```{r, echo=TRUE, eval=FALSE}
+library(shiny)
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+library(ggplot2)
+
+f_name_years=function(prenom,annee_min,annee_max,par_departement=FALSE){
+  name_years=prenoms %>% 
+    filter(name==prenom,
+           year>=annee_min,
+           year<=annee_max)
+  if(!par_departement){ 
+    name_years=name_years %>% 
+      group_by(year) %>% 
+      summarise(n=n(),.groups = 'drop')
+  }
+  return(name_years)
+}
+
+ui <- fluidPage(
+  tags$head(tags$link(rel="stylesheet",
+                      type="text/css",
+                      href="bootstrap.min_dark.css")),
+  fluidRow(column(width=4,img(src="tendance_prenom.png")),
+           column(width=8,
+                  wellPanel(
+                    h3("Infos"),
+                    textInput(inputId="prenom",
+                              label="Quel est ton prénom?",
+                              value="Lise"),   
+                    sliderInput("minmax_year",
+                                "années min et max",
+                                min=1900,
+                                max=2018,
+                                value=c(1900,2018))
+                  ) #wellPanel
+           ) #column
+  ),#fluidRow
+  h3("Résultats"),
+  fluidRow(
+    column(width=4,
+           dataTableOutput("table_name_years")
+    ),#column
+    column(width=8,
+           tabsetPanel(
+             tabPanel("France",
+                      plotOutput("plot_name_years")
+             ),#tabPanel
+             tabPanel("Par dép.",
+                      plotOutput("plot_name_years_dep")
+             )#tabPanel
+           )#tabsetPanel
+    )#column
+  )#fluidRow
+)
+
+server <- function(input, output) {
+  
+  r_name_years=reactive({
+    print("calcul de name_years")
+    f_name_years(input$prenom,
+                 input$minmax_year[1],
+                 input$minmax_year[2])
+  })
+  
+  output$table_name_years <- renderDataTable({
+    r_name_years()
+  })
+  output$plot_name_years <- renderPlot({
+    name_years=r_name_years()
+    ggplot(name_years,aes(x=year,y=n)) +
+      geom_line()+
+      labs(title=paste("Occurences du prénom '",
+                       input$prenom,
+                       "' par année"))
+    
+  })
+  output$plot_name_years_dep <- renderPlot({
+    name_years_dep= f_name_years(input$prenom,
+                                 input$minmax_year[1],
+                                 input$minmax_year[2],
+                                 par_departement=TRUE) 
+    ggplot(name_years_dep,aes(x=year,y=n, color=dpt)) +
+      geom_line()+
+      labs(title=paste("Occurences du prénom '",
+                       input$prenom,
+                       "' par année et par département"))
+    
+  })
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+
+Je vous ai créé un magnifique logo pour votre appli dans le sous-dossier `www` (fichier `tendance_prenom.png`).
+
+(Notez que votre appli sera plus jolie avec le thème "minty" que le thème "dark" hein je vous aurai prévenus!).
+
+**Rajoutez ce logo quelque part dans l'appli** pour un effet de toute beauté.
+
+Répondez ensuite à cette question.
+
+```{r logo_tendance_prenom}
+question("Quelles sont les propositions vraies",
+         answer("Très belle association de couleurs...", correct=TRUE),
+         answer("Cette association de couleurs est fadasse."),
+         answer("'tendance prénom' c'est un peu kitsch comme nom d'appli"),
+         answer("'tendance prénom' c'est un nom chic et choc!", correct=TRUE),
+         correct="Oui! Ce n'était pas facile comme question mais vous vous en êtes bien sorti (j'espère du premier coup...).",
+         incorrect="Comment ça???",
+         allow_retry=TRUE)
+```
+
+Si ça vous plaît vous pouvez aussi ajouter des logos pour d'autre parties de l'appli (par exemple les images `francemetrop.png` et `francemetrop_dep.png` pour les deux tabPanels.)...
+
+## Partie 6: Extras
+
+Bravo vous avez fini les exercices! Si vous en voulez encore vous pouvez essayer de rajouter une **carte** !
+
+### 6.1 Une carte dans l'appli
+
+Vous pouvez utiliser par exemple le shapefile (chemin "data/dep/dep_metrop.shp"). Il vous fournit les polygones des départements de France métropolitaine, que vous pourrez croiser avec le jeu de données `prenom`.
+
+Libre à vous d'explorer / tester / changer les inputs et le type de carte mais pour vous guider en cas de problème voici un exemple avec une carte produite via le package `tmap`... C'est largement perfectible hein c'est juste une base pour que vous puissiez vous amuser!!
+
+
+```{r, echo=TRUE, eval=FALSE}
+library(shiny)
+library(dplyr)
+prenoms=readRDS("data/prenoms.RDS")
+library(ggplot2)
+library(tmap)
+
+
+dep=sf::st_read("data/dep/dep_metrop.shp")
+
+f_name_years=function(prenom,annee_min,annee_max,par_departement=FALSE){
+  name_years=prenoms %>% 
+    filter(name==prenom,
+           year>=annee_min,
+           year<=annee_max)
+  if(!par_departement){ 
+    name_years=name_years %>% 
+      group_by(year) %>% 
+      summarise(n=n(),.groups = 'drop')
+  }
+  return(name_years)
+}
+
+ui <- fluidPage(
+  tags$head(tags$link(rel="stylesheet",
+                      type="text/css",
+                      href="bootstrap.min_minty.css")),
+  fluidRow(column(width=4,img(src="tendance_prenom.png")),
+           column(width=8,
+  wellPanel(
+    h3("Infos"),
+    textInput(inputId="prenom",
+              label="Quel est ton prénom?",
+              value="Lise"),   
+    sliderInput("minmax_year",
+                "années min et max",
+                min=1900,
+                max=2018,
+                value=c(1900,2018))
+  ) #wellPanel
+  ) #column
+  ),#fluidRow
+  h3("Résultats"),
+  fluidRow(
+    column(width=4,
+           dataTableOutput("table_name_years")
+    ),#column
+    column(width=8,
+           tabsetPanel(
+             tabPanel("France",
+                      plotOutput("plot_name_years")
+             ),#tabPanel
+             tabPanel("Par dép.",
+                      plotOutput("plot_name_years_dep")
+             ),#tabPanel
+             tabPanel("Carte",
+                      tmapOutput("map_name_1year")
+             )#tabPanel
+           )#tabsetPanel
+    )#column
+  )#fluidRow
+)
+
+server <- function(input, output) {
+  
+  output$table_name_years <- renderDataTable({
+    f_name_years(input$prenom,
+                 input$minmax_year[1],
+                 input$minmax_year[2]) 
+  })
+  output$plot_name_years <- renderPlot({
+    name_years=f_name_years(input$prenom,
+                            input$minmax_year[1],
+                            input$minmax_year[2]) 
+    ggplot(name_years,aes(x=year,y=n)) +
+      geom_line()+
+      labs(title=paste("Occurences du prénom '",
+                       input$prenom,
+                       "' par année"))
+    
+  })
+  output$plot_name_years_dep <- renderPlot({
+    name_years_dep= f_name_years(input$prenom,
+                                 input$minmax_year[1],
+                                 input$minmax_year[2],
+                                 par_departement=TRUE) 
+    ggplot(name_years_dep,aes(x=year,y=n, color=dpt)) +
+      geom_line()+
+      labs(title=paste("Occurences du prénom '",
+                       input$prenom,
+                       "' par année et par département"))
+    
+  })
+  
+  output$map_name_1year <- renderTmap({
+    prenplot=prenoms %>% filter(name==input$prenom,year==2018)
+    depplot=dep %>%   
+      left_join(prenplot,by="dpt")
+    
+    tmap_mode("view")
+    tm_shape(depplot)+
+      tm_polygons(col="prop")})
+}
+
+shinyApp(ui = ui, server = server)
+```
+
+### 6.2 Pour finir
+
+```{r pour_finir}
+question("C'est bon j'ai fini les exercices",
+         answer("Oui.", correct=TRUE),
+         answer("Non."),
+         correct="Super! Mes félicitations... J'espère que ça vous a donné envie de développer vos propres applis!...",
+         incorrect="Mince!... Donnez-vous le temps d'y revenir plus tard peut-être?",
+         allow_retry=TRUE)
+```
