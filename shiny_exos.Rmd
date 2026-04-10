@@ -1228,7 +1228,7 @@ question("Avec ce thème:",
 
 Voici la solution à l'exercice précédent:
   
-  ```{r, echo=TRUE, eval=FALSE}
+```{r, echo=TRUE, eval=FALSE}
 library(shiny)
 library(dplyr)
 prenoms=readRDS("data/prenoms.RDS")
