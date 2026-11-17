@@ -171,20 +171,13 @@ question("Quel est le type de widget approprié pour l'appli ci-dessus?",
 
 ### 2.2 Production d'une table
 
-Nous allons maintenant utiliser un jeu de données `prenoms`. Il est fourni dans un package en développement (rendu disponible sur github [ici] (https://github.com/ThinkR-open/prenoms) et installable si vous avez le package `devtools` installé sur votre machine). Attention il y a aussi un package `prenoms` sur le CRAN mais ce n'est pas le même! (celui-là contient des données pour le Quebec...). L'installation de devtools pouvant prendre un peu de temps **je vous fournis directement le jeu de données `prenoms.RDS`**.
+Nous allons maintenant utiliser un jeu de données `prenoms` (que je vous ai fourni directement au format RDS -R Data Structure-).
 
-Si vous avez `devtools`:
+Si vous voulez en savoir plus sur l'origine de ce jeu de données: il est fourni dans un package en développement rendu disponible sur github [ici] (https://github.com/ThinkR-open/prenoms).
 
-```{r, eval=FALSE}
-devtools::install_github( "ThinkR-open/prenoms")
-library(prenom)
-data(prenoms)
-```
-
-Si vous n'avez pas `devtools`:
 
 ```{r, eval=FALSE}
-prenoms=readRDS("prenoms.RDS")
+prenoms=readRDS("prenoms.RDS") #chemin à adapter si besoin
 ```
 
 Cette table contient des données sur les prénoms de bébés nés en France métropolitaine entre 1900 et 2019, détaillées par département. Les colonnes sont:
@@ -211,7 +204,7 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
-    output$___ <- renderDataTable({
+    output$___ <- DT::renderDataTable({
     ______    
     })
 }
@@ -254,7 +247,7 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
-    output$table_name_years <- renderDataTable({
+    output$table_name_years <- DT::renderDataTable({
         prenoms %>% 
             filter(name==input$prenom) %>% 
             group_by(year) %>% 
@@ -356,7 +349,7 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
- output$table_name_years <- renderDataTable({
+ output$table_name_years <- DT::renderDataTable({
    name_years=prenoms %>% 
      filter(name==input$prenom,
             year>=input$minmax_year[1],
@@ -407,7 +400,7 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
-    output$table_name_years <- renderDataTable({
+    output$table_name_years <- DT::renderDataTable({
         prenoms %>% 
             filter(name==input$prenom,
                    year>=input$minmax_year[1],
@@ -477,7 +470,7 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
-    output$table_name_years <- renderDataTable({
+    output$table_name_years <- DT::renderDataTable({
         name_years=prenoms %>% 
             filter(name==input$prenom,
                    year>=input$minmax_year[1],
@@ -554,7 +547,7 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
-  output$table_name_years <- renderDataTable({
+  output$table_name_years <- DT::renderDataTable({
     name_years=prenoms %>% 
       filter(name==input$prenom,
              year>=input$minmax_year[1],
@@ -642,7 +635,7 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
-    output$table_name_years <- renderDataTable({
+    output$table_name_years <- DT::renderDataTable({
         name_years=prenoms %>% 
             filter(name==input$prenom,
                    year>=input$minmax_year[1],
@@ -668,7 +661,7 @@ server <- function(input, output) {
     output$plot_name_years_dep <- renderPlot({
         name_years_dep=prenoms %>% 
             filter(name==input$prenom, 
-            filter(year>=input$minmax_year[1],
+                   year>=input$minmax_year[1],
                    year<=input$minmax_year[2])
         ggplot(name_years_dep,aes(x=year,y=n, color=dpt)) +
             geom_line()+
@@ -796,7 +789,7 @@ ui <- fluidPage(
 )
 
 server <- function(input, output) {
-    output$table_name_year <- renderDataTable({
+    output$table_name_year <- DT::renderDataTable({
         f_name_years(input$prenom,
                      input$minmax_year[1],
                      input$minmax_year[2]) 
@@ -944,7 +937,7 @@ ui <- fluidPage(
 
 server <- function(input, output) {
    
-    output$table_name_years <- renderDataTable({
+    output$table_name_years <- DT::renderDataTable({
         print("in table_name_years")
         f_name_years(input$prenom,
                      input$minmax_year[1],
@@ -1083,7 +1076,7 @@ server <- function(input, output) {
                  input$minmax_year[2])
   })
   
-  output$table_name_years <- renderDataTable({
+  output$table_name_years <- DT::renderDataTable({
     name_years=r_name_years()
   })
   output$plot_name_years <- renderPlot({
@@ -1186,7 +1179,7 @@ server <- function(input, output) {
                  input$minmax_year[2])
   })
   
-  output$table_name_years <- renderDataTable({
+  output$table_name_years <- DT::renderDataTable({
     r_name_years()
   })
   output$plot_name_years <- renderPlot({
@@ -1293,7 +1286,7 @@ server <- function(input, output) {
                  input$minmax_year[2])
   })
   
-  output$table_name_years <- renderDataTable({
+  output$table_name_years <- DT::renderDataTable({
     r_name_years()
   })
   output$plot_name_years <- renderPlot({
@@ -1420,7 +1413,7 @@ ui <- fluidPage(
 
 server <- function(input, output) {
   
-  output$table_name_years <- renderDataTable({
+  output$table_name_years <- DT::renderDataTable({
     f_name_years(input$prenom,
                  input$minmax_year[1],
                  input$minmax_year[2]) 
@@ -1453,8 +1446,7 @@ server <- function(input, output) {
     prenplot=prenoms %>% filter(name==input$prenom,year==2018)
     depplot=dep %>%   
       left_join(prenplot,by="dpt")
-    
-    tmap_mode("view")
+
     tm_shape(depplot)+
       tm_polygons(col="prop")})
 }
